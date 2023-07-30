@@ -14,15 +14,15 @@ module_path = os.path.abspath(os.path.join('..'))
 if module_path not in sys.path:
     sys.path.append(module_path)
 
-if os.path.exists("../settings.json"):
-    with open("../settings.json", "r") as f:
+if os.path.exists("settings.json"):
+    with open("settings.json", "r") as f:
         settings = json.load(f)
         os.environ["OPENAI_API_KEY"] = settings["OPENAI_API_KEY"]
         os.environ["OPENAI_API_BASE"] = settings["OPENAI_API_BASE"]
 else:
     raise Exception("settings.json not found!")
 
-def parse_obj(query_obj:str, image:Image, inspect=False) -> List(List(int)):
+def parse_obj(query_obj:str, image:Image, inspect=False) -> List[List[int]]:
     """
     :param: query_obj: the name of the object
     :param: image: the image to be queried
@@ -49,4 +49,14 @@ def parse_obj(query_obj:str, image:Image, inspect=False) -> List(List(int)):
     if inspect:
         print(prog_state)
 
+    # Scale the bounding box to the original size
+    for bbox in result:
+        bbox = [i * width // 640 for i in bbox]
+
     return result
+
+
+if __name__ == "__main__":
+    image = Image.open('assets/duck.png')
+    result = parse_obj('duck',image,inspect=True)
+    print(result)
