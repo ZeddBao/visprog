@@ -20,7 +20,8 @@ if os.path.exists("settings.json"):
         os.environ["OPENAI_API_KEY"] = settings["OPENAI_API_KEY"]
         os.environ["OPENAI_API_BASE"] = settings["OPENAI_API_BASE"]
 else:
-    raise Exception("settings.json not found!")
+    with open("settings.json", "w"):
+        pass
 
 def parse_obj(query_obj:str, image:Image, inspect=False) -> List[List[int]]:
     """
