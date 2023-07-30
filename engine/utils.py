@@ -1,8 +1,6 @@
 import os
-from PIL import Image
 import openai
 import numpy as np
-import copy
 
 from .step_interpreters import register_step_interpreters, parse_step
 
@@ -49,6 +47,7 @@ class ProgramInterpreter:
 class ProgramGenerator():
     def __init__(self,prompter,temperature=0.7,top_p=0.5,prob_agg='mean'):
         openai.api_key = os.getenv("OPENAI_API_KEY")
+        openai.api_base = os.getenv("OPENAI_API_BASE")
         self.prompter = prompter
         self.temperature = temperature
         self.top_p = top_p

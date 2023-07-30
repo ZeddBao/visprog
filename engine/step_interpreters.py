@@ -343,6 +343,96 @@ class Loc2Interpreter(LocInterpreter):
         return objs
 
 
+class SortInterpreter():
+    """
+    Example:
+    BOX1=SORT(box=BOX0,key='lambda x: x[0]',reverse=True)
+    """
+    step_name = 'SORT'
+
+    # TODO: add support for sorting by multiple attributes
+    def __init__(self):
+        print(f'Registering {self.step_name} step')
+
+    def parse(self,prog_step):
+        parse_result = parse_step(prog_step.prog_str)
+        step_name = parse_result['step_name']
+        box_var = parse_result['args']['box']
+        key = eval(parse_result['args']['key'])
+        reverse = eval(parse_result['args']['reverse'])
+        output_var = parse_result['output_var']
+        assert(step_name==self.step_name)
+        return box_var, key, reverse, output_var
+
+    def html(self,box_img,output_var,key,reverse):
+        step_name=html_step_name(self.step_name)
+        box_arg=html_arg_name('box')
+        key_arg=html_arg_name('key')
+        reverse_arg=html_arg_name('reverse')
+        output_var=html_var_name(output_var)
+        box_img=html_embed_image(box_img,300)
+        return f"<div>{output_var}={step_name}({box_arg}={box_img}, {key_arg}={key}, {reverse_arg}={reverse})</div>"
+
+    def execute(self,prog_step,inspect=False):
+        box_var, key, reverse, output_var = self.parse(prog_step)
+        boxes = prog_step.state[box_var].copy()
+        try:
+            boxes.sort(key=eval(key), reverse=reverse)
+        except SyntaxError:
+            print(f'Warning: {self.step_name} step: could not parse key function, no change to {box_var}')
+            key = 'None'
+        prog_step.state[output_var+'_IMAGE'] = prog_step.state[box_var+'_IMAGE']
+        prog_step.state[output_var] = boxes
+        if inspect:
+            box_img = prog_step.state[box_var+'_IMAGE']
+            html_str = self.html(box_img, output_var, key, reverse)
+            return boxes, html_str
+
+        return boxes
+    
+
+class IndexInterpreter():
+    """
+    Example:
+    BOX1=INDEX(box=BOX0,index=0)
+    """
+    step_name = 'INDEX'
+
+    def __init__(self):
+        print(f'Registering {self.step_name} step')
+
+    def parse(self,prog_step):
+        parse_result = parse_step(prog_step.prog_str)
+        step_name = parse_result['step_name']
+        box_var = parse_result['args']['box']
+        index = eval(parse_result['args']['index'])
+        output_var = parse_result['output_var']
+        assert(step_name==self.step_name)
+        return box_var, index, output_var
+    
+    def html(self,box_img,output_var,index):
+        step_name=html_step_name(self.step_name)
+        box_arg=html_arg_name('box')
+        index_arg=html_arg_name('index')
+        output_var=html_var_name(output_var)
+        box_img=html_embed_image(box_img,300)
+        return f"<div>{output_var}={step_name}({box_arg}={box_img}, {index_arg}={index})</div>"
+    
+    def execute(self,prog_step,inspect=False):
+        box_var, index, output_var = self.parse(prog_step)
+        boxes = prog_step.state[box_var]
+        if len(boxes) > index :
+            prog_step.state[output_var] = [boxes[index]]
+        else:
+            prog_step.state[output_var] = []
+        if inspect:
+            box_img = prog_step.state[box_var+'_IMAGE']
+            html_str = self.html(box_img, output_var, index)
+            return prog_step.state[output_var], html_str
+
+        return prog_step.state[output_var]
+
+
 class CountInterpreter():
     step_name = 'COUNT'
 
@@ -1377,4 +1467,21 @@ def register_step_interpreters(dataset='nlvr'):
             RESULT=ResultInterpreter(),
             TAG=TagInterpreter(),
             LOC=Loc2Interpreter(thresh=0.05,nms_thresh=0.3)
+        )
+    elif dataset=='objQuery':
+        return dict(
+            LOC=LocInterpreter(),
+            CROP=CropInterpreter(),
+            CROP_RIGHTOF=CropRightOfInterpreter(),
+            CROP_LEFTOF=CropLeftOfInterpreter(),
+            CROP_FRONTOF=CropFrontOfInterpreter(),
+            CROP_INFRONTOF=CropInFrontOfInterpreter(),
+            CROP_INFRONT=CropInFrontInterpreter(),
+            CROP_BEHIND=CropBehindInterpreter(),
+            CROP_AHEAD=CropAheadInterpreter(),
+            CROP_BELOW=CropBelowInterpreter(),
+            CROP_ABOVE=CropAboveInterpreter(),
+            SORT=SortInterpreter(),
+            INDEX=IndexInterpreter(),
+            RESULT=ResultInterpreter()
         )
