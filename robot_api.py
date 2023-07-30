@@ -20,8 +20,9 @@ if os.path.exists("settings.json"):
         os.environ["OPENAI_API_KEY"] = settings["OPENAI_API_KEY"]
         os.environ["OPENAI_API_BASE"] = settings["OPENAI_API_BASE"]
 else:
-    with open("settings.json", "w"):
-        pass
+    with open('settings.json', 'w'):
+        print("Please fill in your OpenAI API key and base URL in settings.json.")
+        exit()
 
 def parse_obj(query_obj:str, image:Image, inspect=False) -> List[List[int]]:
     """
