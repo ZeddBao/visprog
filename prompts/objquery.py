@@ -1,32 +1,34 @@
 import random
 
 OBJQUERY_CURATED_EXAMPLES=[
-"""Question:the second yellow duck from left
-BOX0=LOC(image=IMAGE,object='yellow duck')
-BOX1=SORT(box=BOX0,key='lambda x: x[0]',reverse=False)
-BOX2=INDEX(box=BOX1,index=1)
-FINAL_RESULT=RESULT(var=BOX2)
+"""Question:the yellow duck
+OBJ0=SEG(image=IMAGE)
+OBJ1=SELECT(image=IMAGE,object=OBJ0,query='yellow duck',category='bird')
+FINAL_RESULT=RESULT(var=OBJ1)
 """
 ,
 """Question:the third cup from bottom
-BOX0=LOC(image=IMAGE,object='cup')
-BOX1=SORT(box=BOX0,key='lambda x: x[3]',reverse=True)
-BOX2=INDEX(box=BOX1,index=2)
-FINAL_RESULT=RESULT(var=BOX2)
+OBJ0=SEG(image=IMAGE)
+OBJ1=SELECT(image=IMAGE,object=OBJ0,query='cup',category='cup')
+OBJ2=SORT(object=OBJ1,key="lambda x: x['box'][3]",reverse=True)
+OBJ3=INDEX(item=OBJ2,index=2)
+FINAL_RESULT=RESULT(var=OBJ3)
 """
 ,
 """Question:the first duck from right
-BOX0=LOC(image=IMAGE,object='duck')
-BOX1=SORT(box=BOX0,key='lambda x: x[2]',reverse=True)
-BOX2=INDEX(box=BOX1,index=0)
-FINAL_RESULT=RESULT(var=BOX2)
+OBJ0=SEG(image=IMAGE)
+OBJ1=SELECT(image=IMAGE,object=OBJ0,query='duck',category='bird')
+OBJ2=SORT(object=OBJ1,key="lambda x: x['box'][2]",reverse=True)
+OBJ3=INDEX(item=OBJ2,index=0)
+FINAL_RESULT=RESULT(var=OBJ3)
 """
 ,
-"""Question:the second duck from top
-BOX0=LOC(image=IMAGE,object='duck')
-BOX1=SORT(box=BOX0,key='lambda x: x[1]',reverse=False)
-BOX2=INDEX(box=BOX1,index=1)
-FINAL_RESULT=RESULT(var=BOX2)
+"""Question:the second person from top
+OBJ0=SEG(image=IMAGE)
+OBJ1=SELECT(image=IMAGE,object=OBJ0,query='person',category='person')
+OBJ2=SORT(object=OBJ1,key="lambda x: x['box'][1]",reverse=False)
+OBJ3=INDEX(item=OBJ2,index=1)
+FINAL_RESULT=RESULT(var=OBJ3)
 """
 ]
 

@@ -347,6 +347,7 @@ class SortInterpreter():
     """
     Example:
     BOX1=SORT(box=BOX0,key='lambda x: x[0]',reverse=True)
+    OBJ1=SORT(obj=OBJ0,key='lambda x: x['box'][0]',reverse=True)
     """
     step_name = 'SORT'
 
@@ -357,44 +358,64 @@ class SortInterpreter():
     def parse(self,prog_step):
         parse_result = parse_step(prog_step.prog_str)
         step_name = parse_result['step_name']
-        box_var = parse_result['args']['box']
+        box_var = parse_result['args'].get('box', None)
+        obj_var = parse_result['args'].get('object', None)
         key = eval(parse_result['args']['key'])
         reverse = eval(parse_result['args']['reverse'])
         output_var = parse_result['output_var']
         assert(step_name==self.step_name)
-        return box_var, key, reverse, output_var
+        return box_var, obj_var, key, reverse, output_var
 
-    def html(self,box_img,output_var,key,reverse):
+    def html(self,box_img,obj_var,output_var,key,reverse):
         step_name=html_step_name(self.step_name)
         box_arg=html_arg_name('box')
+        obj_arg=html_arg_name('obj')
         key_arg=html_arg_name('key')
         reverse_arg=html_arg_name('reverse')
         output_var=html_var_name(output_var)
-        box_img=html_embed_image(box_img,300)
-        return f"<div>{output_var}={step_name}({box_arg}={box_img}, {key_arg}={key}, {reverse_arg}={reverse})</div>"
+        if box_img is not None:
+            box_img=html_embed_image(box_img,300)
+            return f"<div>{output_var}={step_name}({box_arg}={box_img}, {key_arg}={key}, {reverse_arg}={reverse})</div>"
+        else:
+            return f"<div>{output_var}={step_name}({obj_arg}={obj_var}, {key_arg}={key}, {reverse_arg}={reverse})</div>"
 
     def execute(self,prog_step,inspect=False):
-        box_var, key, reverse, output_var = self.parse(prog_step)
-        boxes = prog_step.state[box_var].copy()
-        try:
-            boxes.sort(key=eval(key), reverse=reverse)
-        except SyntaxError:
-            print(f'Warning: {self.step_name} step: could not parse key function, no change to {box_var}')
-            key = 'None'
-        prog_step.state[output_var+'_IMAGE'] = prog_step.state[box_var+'_IMAGE']
-        prog_step.state[output_var] = boxes
-        if inspect:
-            box_img = prog_step.state[box_var+'_IMAGE']
-            html_str = self.html(box_img, output_var, key, reverse)
-            return boxes, html_str
-
-        return boxes
+        box_var, obj_var, key, reverse, output_var = self.parse(prog_step)
+        
+        if box_var is not None:
+            boxes = prog_step.state[box_var].copy()
+            try:
+                boxes.sort(key=eval(key), reverse=reverse)
+            except SyntaxError:
+                print(f'Warning: {self.step_name} step: could not parse key function, no change to {box_var}')
+                key = 'None'
+            prog_step.state[output_var+'_IMAGE'] = prog_step.state[box_var+'_IMAGE']
+            prog_step.state[output_var] = boxes
+            if inspect:
+                box_img = prog_step.state[box_var+'_IMAGE']
+                html_str = self.html(box_img, None, output_var, key, reverse)
+                return boxes, html_str
+            return boxes
+        
+        else:
+            objs = prog_step.state[obj_var].copy()
+            try:
+                objs.sort(key=eval(key), reverse=reverse)
+            except SyntaxError:
+                print(f'Warning: {self.step_name} step: could not parse key function, no change to {obj_var}')
+                key = 'None'
+            prog_step.state[output_var] = objs
+            if inspect:
+                html_str = self.html(None, obj_var, output_var, key, reverse)
+                return objs, html_str
+            return objs
     
 
 class IndexInterpreter():
     """
     Example:
     BOX1=INDEX(box=BOX0,index=0)
+    OBJ1=INDEX(obj=OBJ0,index=0)
     """
     step_name = 'INDEX'
 
@@ -404,30 +425,29 @@ class IndexInterpreter():
     def parse(self,prog_step):
         parse_result = parse_step(prog_step.prog_str)
         step_name = parse_result['step_name']
-        box_var = parse_result['args']['box']
+        item_var = parse_result['args']['item']
         index = eval(parse_result['args']['index'])
         output_var = parse_result['output_var']
         assert(step_name==self.step_name)
-        return box_var, index, output_var
+        return item_var, index, output_var
     
-    def html(self,box_img,output_var,index):
+    def html(self,item_var,output_var,index):
         step_name=html_step_name(self.step_name)
-        box_arg=html_arg_name('box')
+        item_arg=html_arg_name('item')
         index_arg=html_arg_name('index')
         output_var=html_var_name(output_var)
-        box_img=html_embed_image(box_img,300)
-        return f"<div>{output_var}={step_name}({box_arg}={box_img}, {index_arg}={index})</div>"
+        item_var=html_var_name(item_var)
+        return f"<div>{output_var}={step_name}({item_arg}={item_var}, {index_arg}={index})</div>"
     
     def execute(self,prog_step,inspect=False):
-        box_var, index, output_var = self.parse(prog_step)
-        boxes = prog_step.state[box_var]
-        if len(boxes) > index :
-            prog_step.state[output_var] = [boxes[index]]
+        item_var, index, output_var = self.parse(prog_step)
+        items = prog_step.state[item_var]
+        if len(items) > index :
+            prog_step.state[output_var] = [items[index]]
         else:
             prog_step.state[output_var] = []
         if inspect:
-            box_img = prog_step.state[box_var+'_IMAGE']
-            html_str = self.html(box_img, output_var, index)
+            html_str = self.html(item_var, output_var, index)
             return prog_step.state[output_var], html_str
 
         return prog_step.state[output_var]
@@ -759,7 +779,7 @@ class SelectInterpreter():
         img_var = parse_result['args']['image']
         obj_var = parse_result['args']['object']
         query = eval(parse_result['args']['query']).split(',')
-        category = eval(parse_result['args']['category'])
+        category = eval(parse_result['args'].get('category', 'None'))
         output_var = parse_result['output_var']
         assert(step_name==self.step_name)
         return img_var,obj_var,query,category,output_var
@@ -1471,6 +1491,7 @@ def register_step_interpreters(dataset='nlvr'):
     elif dataset=='objQuery':
         return dict(
             LOC=LocInterpreter(),
+            SEG=SegmentInterpreter(),
             CROP=CropInterpreter(),
             CROP_RIGHTOF=CropRightOfInterpreter(),
             CROP_LEFTOF=CropLeftOfInterpreter(),
@@ -1483,5 +1504,6 @@ def register_step_interpreters(dataset='nlvr'):
             CROP_ABOVE=CropAboveInterpreter(),
             SORT=SortInterpreter(),
             INDEX=IndexInterpreter(),
+            SELECT=SelectInterpreter(),
             RESULT=ResultInterpreter()
         )
